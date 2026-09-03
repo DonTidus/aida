@@ -7,6 +7,7 @@ import {
   levelOf, LEVELS, shouldSpeak,
 } from '@/lib/aida-engine';
 import { BuddyState } from '@/lib/personas';
+import { cancelSpeak, initVoices, speak } from '@/lib/voice';
 import GoldChart from './GoldChart';
 
 const mmss = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(Math.max(0, t) % 60)).padStart(2, '0')}`;
@@ -32,6 +33,7 @@ export default function ReplayStage({
   const [ended, setEnded] = useState(false);
   const [q, setQ] = useState('');
   const [chatBusy, setChatBusy] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(false);
 
   const stream = useMemo(() => (pers ? buildStream(pers) : []), [pers]);
   const idxRef = useRef(0);
@@ -74,6 +76,8 @@ export default function ReplayStage({
     }
   }, [tNow, stream, pers]);
 
+  useEffect(() => { initVoices(); }, []);
+  useEffect(() => () => cancelSpeak(), []);
   useEffect(() => { feedRef.current?.scrollTo({ top: 1e6 }); }, [feed.length]);
   useEffect(() => { msgRef.current?.scrollTo({ top: 1e6 }); }, [msgs.length]);
 
@@ -82,6 +86,11 @@ export default function ReplayStage({
     const interferenceHit = !timingOn && inFight && ev.kind !== 'death' && ev.kind !== 'end';
     if (interferenceHit) setInterference((c) => c + 1);
     setMsgs((m) => [...m.slice(-40), { t: tNow, text, source, interference: interferenceHit }]);
+    const vb = buddy;
+    speak(text, {
+      rate: vb?.voice.rate ?? 1.05,
+      pitch: vb?.voice.pitch ?? 0.95,
+    }, voiceOn);
   }
 
   function addPoints(ev: Ev) {
@@ -253,6 +262,9 @@ export default function ReplayStage({
                       className={`btn ${speed === s ? 'border-neon/60 text-neon' : ''} !px-2 !py-1 text-xs`}>{s}x</button>
                   ))}
                   <button className="btn !px-2 !py-1 text-xs" onClick={skipToEnd}>跳到结算</button>
+                  <button onClick={() => { setVoiceOn((v) => !v); cancelSpeak(); }}
+                    className={`btn !px-2 !py-1 text-xs ${voiceOn ? 'border-neon/60 text-neon' : ''}`}
+                    title="TA 的解说语音播报">🔊 语音</button>
                 </>
               ) : (
                 <button className="btn" onClick={() => reset()}>← 换个视角</button>

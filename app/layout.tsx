@@ -21,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/" className="rounded-lg px-3 py-1.5 text-slate-300 hover:bg-panel hover:text-neon">大厅</Link>
               <Link href="/buddy" className="rounded-lg px-3 py-1.5 text-slate-300 hover:bg-panel hover:text-neon">陪伴</Link>
               <Link href="/replay" className="rounded-lg px-3 py-1.5 text-slate-300 hover:bg-panel hover:text-neon">共历回放</Link>
+              <Link href="/watch" className="rounded-lg px-3 py-1.5 text-slate-300 hover:bg-panel hover:text-neon">陪看</Link>
               <Link href="/memory" className="rounded-lg px-3 py-1.5 text-slate-300 hover:bg-panel hover:text-neon">记忆库</Link>
               <Link href="/product" className="rounded-lg px-3 py-1.5 text-slate-300 hover:bg-panel hover:text-neon">产品逻辑</Link>
             </nav>

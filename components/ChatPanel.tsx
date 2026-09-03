@@ -2,70 +2,85 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { BuddyState } from '@/lib/personas';
-import { brainReply, openingLine, voiceParams } from '@/lib/chat-brain';
+import { brainReply, openingLine } from '@/lib/chat-brain';
 import { MemoryCard } from '@/lib/aida-engine';
+import { cancelSpeak, initVoices, speak, ttsSupported } from '@/lib/voice';
+import LLMSettings from './LLMSettings';
 
 interface Msg { from: 'buddy' | 'me'; text: string; source?: 'llm' | 'engine'; t: number }
 
-/** 文字 + 语音（TTS 播报 / STT 按住说话）聊天面板 */
+/** 文字 + 语音（TTS 播报 / STT 按住说话）聊天面板，可用于任意陪伴场景 */
 export default function ChatPanel({
-  buddy, memories, compact = false, onMood,
+  buddy, memories, compact = false, onMood, contextPrefix, extraPayload, title, injectRef,
 }: {
   buddy: BuddyState;
   memories?: MemoryCard[];
   compact?: boolean;
   onMood?: (m: 'calm' | 'happy' | 'excited' | 'sad' | 'wink' | 'worried') => void;
+  /** 每条发言自动附加的上下文前缀，如「[陪看·第12分钟]」 */
+  contextPrefix?: () => string;
+  /** 附加到 /api/chat 的额外字段（如 watch 进度） */
+  extraPayload?: () => Record<string, unknown>;
+  title?: string;
+  /** 外部注入伙伴发言的通道（陪看吐槽等），注入的发言同样走语音 */
+  injectRef?: React.MutableRefObject<((text: string) => void) | null>;
 }) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
   const [voiceOn, setVoiceOn] = useState(false);
   const [listening, setListening] = useState(false);
-  const sttSupported = useRef(false);
-  const boxRef = useRef<HTMLDivElement>(null);
   const recogRef = useRef<any>(null);
-
-  const vp = voiceParams(buddy);
+  const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMsgs([{ from: 'buddy', text: openingLine(buddy), t: Date.now() }]);
   }, [buddy.id]);
 
+  useEffect(() => { initVoices(); }, []);
+  useEffect(() => {
+    if (injectRef) injectRef.current = (text: string) => {
+      setMsgs((m) => [...m, { from: 'buddy', text, t: Date.now() }]);
+      speakLine(text);
+      onMood?.('happy');
+      setTimeout(() => onMood?.('calm'), 1200);
+    };
+  });
   useEffect(() => { boxRef.current?.scrollTo({ top: 1e6 }); }, [msgs.length]);
+  useEffect(() => () => cancelSpeak(), []);
 
-  function speak(text: string) {
-    if (!voiceOn || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    const u = new SpeechSynthesisUtterance(text.replace(/【.*?】/g, ''));
-    u.lang = 'zh-CN';
-    u.rate = vp.rate;
-    u.pitch = vp.pitch;
-    const zh = window.speechSynthesis.getVoices().find((v) => v.lang.startsWith('zh'));
-    if (zh) u.voice = zh;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-    onMood?.('excited');
-    setTimeout(() => onMood?.('calm'), 1500);
+  function speakLine(text: string) {
+    speak(text, { rate: buddy.voice.rate, pitch: buddy.voice.pitch }, voiceOn);
+    if (voiceOn) {
+      onMood?.('excited');
+      setTimeout(() => onMood?.('calm'), 1500);
+    }
   }
 
   function push(text: string) {
     if (!text.trim() || busy) return;
-    setMsgs((m) => [...m, { from: 'me', text, t: Date.now() }]);
+    const question = contextPrefix ? `${contextPrefix()}${text.trim()}` : text.trim();
+    setMsgs((m) => [...m, { from: 'me', text: text.trim(), t: Date.now() }]);
     setQ('');
     setBusy(true);
     onMood?.('wink');
     fetch('/api/chat', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: text, buddy: { ...buddy, memories: memories ?? buddy.memories } }),
+      body: JSON.stringify({
+        q: question,
+        buddy: { ...buddy, memories: memories ?? buddy.memories },
+        ...(extraPayload ? extraPayload() : {}),
+      }),
     })
       .then((r) => r.json())
       .then((j) => {
         setMsgs((m) => [...m, { from: 'buddy', text: j.text, source: j.source, t: Date.now() }]);
-        speak(j.text);
+        speakLine(j.text);
       })
       .catch(() => {
         const fb = brainReply(text, buddy);
         setMsgs((m) => [...m, { from: 'buddy', text: fb, source: 'engine', t: Date.now() }]);
-        speak(fb);
+        speakLine(fb);
       })
       .finally(() => { setBusy(false); onMood?.('calm'); });
   }
@@ -88,17 +103,20 @@ export default function ChatPanel({
     setListening(true);
   }
 
+  const sttSupported = typeof window !== 'undefined' && !!((window as any).webkitSpeechRecognition || (window as any).SpeechRecognition);
+
   return (
     <div className={`flex flex-col ${compact ? '' : 'glass p-4'}`}>
-      <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">{buddy.name}的频道</h3>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">{title ?? `${buddy.name}的频道`}</h3>
         <div className="flex items-center gap-2">
-          {'speechSynthesis' in window && (
-            <button onClick={() => { setVoiceOn((v) => !v); window.speechSynthesis.cancel(); }}
+          {ttsSupported() && (
+            <button onClick={() => { setVoiceOn((v) => !v); cancelSpeak(); }}
               className={`chip cursor-pointer ${voiceOn ? 'border-neon/60 text-neon' : ''}`} title="语音播报（音色随性格变化）">
               {voiceOn ? '🔊 语音开' : '🔇 语音关'}
             </button>
           )}
+          <LLMSettings />
         </div>
       </div>
       <div ref={boxRef} className={`scroll-thin overflow-y-auto pr-1 ${compact ? 'h-40 space-y-1.5' : 'h-80 space-y-2'}`}>
@@ -118,10 +136,10 @@ export default function ChatPanel({
         <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && push(q)}
           placeholder={`跟${buddy.name}说点什么…`}
           className="min-w-0 flex-1 rounded-xl border border-edge bg-ink px-3 py-2 text-sm outline-none placeholder:text-slate-600 focus:border-neon/60" />
-        {((typeof window !== 'undefined') && ((window as any).webkitSpeechRecognition || (window as any).SpeechRecognition)) ? (
+        {sttSupported && (
           <button onClick={toggleListen} title="按住说话（语音识别）"
-            className={`btn !px-3 ${listening ? 'border-ember text-ember animate-pulse' : ''}`}>🎙</button>
-        ) : null}
+            className={`btn !px-3 ${listening ? 'animate-pulse border-ember text-ember' : ''}`}>🎙</button>
+        )}
         <button className="btn-primary !px-3" onClick={() => push(q)} disabled={busy}>发</button>
       </div>
     </div>

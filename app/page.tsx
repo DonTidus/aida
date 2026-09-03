@@ -10,9 +10,9 @@ import { levelOf } from '@/lib/aida-engine';
 const DEFAULT_TRAITS: Traits = { energy: 60, sass: 50, warmth: 55, logic: 50, intimacy: 25 };
 
 const MOMENTS = [
-  { icon: '🎙', title: '开麦陪看', desc: '语音陪你看完整场对局。你倒下后的黑白屏时间，是 TA 的专属发言窗口。' },
+  { icon: '🎙', title: '开麦陪看', desc: '语音陪你看完整场比赛、剧集、电影。你倒下后的黑白屏时间，是 TA 的专属发言窗口。' },
   { icon: '⏱', title: '团战绝不出声', desc: '时机引擎只在结算与喘息的间隙说话。团战 47 次插话 vs 0 次，开关实测。' },
-  { icon: '📖', title: '把对局讲成故事', desc: '结算后逐波复盘：高光、至暗、翻盘点——不是数据表，是 TA 讲给你听的。' },
+  { icon: '📖', title: '看什么都能吐槽', desc: '比赛回放逐波复盘；剧综陪看按时间轴吐槽，你暂停、拖进度 TA 都有反应。' },
   { icon: '🌱', title: '越玩越懂你', desc: '每场共同经历都会沉淀为记忆、微调 TA 的性格。三个月后，TA 是全世界最懂你的那一个。' },
 ];
 
