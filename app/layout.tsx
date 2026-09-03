@@ -4,7 +4,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: '艾搭 AIDA · 从你的游戏行为里长出来的AI搭子',
-  description: 'AI 游戏伙伴原型：真实开源对局数据 + 时机引擎 + 情绪记忆库。腾讯 IEG AI 产品经理培训生作品集项目。',
+  description: '艾搭 AIDA — 可捏可养的AI游戏搭子：真实开源对局数据 + 时机引擎 + 情绪记忆 + 性格演化。',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
         <footer className="mx-auto max-w-6xl px-4 py-8 text-[11px] leading-relaxed text-slate-600">
           数据来源（开源）：Valve TI14 官方回放的开源解析样例 github.com/whanyu1212/gem-dota · OpenDota/dotaconstants 常量表（npm: dotaconstants）。
-          本原型仅用于学习与作品集演示，非商业用途。艾搭的人格与所有发言均为产品设计。
+          个人学习研究项目，非商业用途。艾搭的人格与所有发言均为产品设计。
         </footer>
       </body>
     </html>

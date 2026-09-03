@@ -19,7 +19,7 @@ export default function ProductPage() {
   return (
     <div className="space-y-4">
       <section className="glass p-6 md:p-8">
-        <h1 className="text-xl font-black text-slate-50 md:text-2xl">产品逻辑一页纸（给面试官）</h1>
+        <h1 className="text-xl font-black text-slate-50 md:text-2xl">产品设计文档</h1>
         <p className="mt-2 text-sm text-slate-400">
           主张：<strong className="text-gold">人对 AI 产生感情，靠的不是它多会聊，而是它陪你打了多少局。</strong>
           绝大多数 AI 陪伴产品把感情寄托在对话质量上；艾搭把感情建立在<strong className="text-slate-200">共同经历</strong>上——
@@ -90,11 +90,11 @@ export default function ProductPage() {
         </ul>
       </Section>
 
-      <Section n="07" title="本 Demo 的边界（诚实声明）">
+      <Section n="07" title="边界与诚实声明">
         <ul className="list-disc space-y-1 pl-5">
           <li>回放代替实时对局：为验证「时机 / 记忆 / 演化 / 陪伴」机制本身；实时接入需游戏平台数据授权。</li>
           <li>语音为浏览器 Web Speech API（音色非定制）；桌宠为 Document PiP 置顶窗口（非原生客户端）；均为形态验证。</li>
-          <li>开源样例为截断解析，开局 1-2 分钟个别事件缺失；经济曲线为分钟级；数据仅用于学习与作品集演示。</li>
+          <li>开源样例为截断解析，开局 1-2 分钟个别事件缺失；经济曲线为分钟级；数据仅用于学习与个人研究。</li>
         </ul>
         <p className="pt-1 text-xs text-slate-500">
           场次信息：{MATCH.meta.league} · {MATCH.meta.radiant_name} vs {MATCH.meta.dire_name} · match_id {MATCH.meta.match_id} · {durMin} 分钟 · 数据仓库 {MATCH.meta.source.repo}
